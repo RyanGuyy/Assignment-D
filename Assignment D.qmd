@@ -1,0 +1,58 @@
+---
+title: "Assignment D"
+format: html
+editor: visual
+---
+
+```{r, warning = FALSE, message=FALSE}
+library(data.table)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(zoo)
+library(tibble)
+library(readr)
+```
+
+```{r}
+nm <- c("YY","MM","DD","hh","mm","WDIR","WSPD","GST",
+        "WVHT","DPD","APD","MWD","PRES","ATMP","WTMP","DEWP","VIS","TIDE")
+data <- read.table("bouy_data.txt", header = FALSE, comment.char = "#")
+names(data) <- nm
+
+na_if_val <- function(x, v) { x[x %in% v] <- NA_real_; x }
+
+data$WVHT <- na_if_val(data$WVHT, 99)
+data$DPD  <- na_if_val(data$DPD,  99)
+data$APD  <- na_if_val(data$APD,  99)
+data$VIS  <- na_if_val(data$VIS,  99)
+data$TIDE <- na_if_val(data$TIDE, 99)
+data$MWD  <- na_if_val(data$MWD,  999)
+data$ATMP <- na_if_val(data$ATMP, 999)
+data$WTMP <- na_if_val(data$WTMP, 999)
+data$DEWP <- na_if_val(data$DEWP, 999)
+data$WSPD <- na_if_val(data$WSPD, 99)
+data$GST  <- na_if_val(data$GST,  99)
+
+head(data)
+
+# Question: Is wind speed (WSPD, m/s) positively associated with significant wave height (WVHT, m)?
+
+data_clean <- data[complete.cases(data$WSPD, data$WVHT), c("WSPD","WVHT")]
+
+summary(data_clean)
+
+fit <- lm(WVHT ~ WSPD, data = data_clean)
+r   <- cor(data_clean$WSPD, data_clean$WVHT)
+print(fit)
+print(r)
+
+ggplot(data = data_clean, aes(x = WSPD, y = WVHT)) +
+  geom_point(alpha = 0.3) +
+  geom_smooth(method = "lm") +
+  labs(x = "WSPD (m/s)", y = "WVHT (m)") +
+  theme_classic()
+
+# In the cleaned data, wind speed(WSPD) and wave height(WVHT) show a positive correlation where r = 0.653. A simple linear fit suggests WVHT ≈ 0.1407 × WSPD + 0.0729, i.e., about 0.4m increase in wave height per 1 m/s increase in wind speed.
+
+```
